@@ -35,7 +35,7 @@ app.use(
     origin: "http://localhost:4000",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
-  }),
+  })
 );
 
 io.on("connection", (socket) => {

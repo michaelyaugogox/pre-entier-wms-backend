@@ -4,7 +4,7 @@ const ProductModel = require("../models/Product");
 
 const createOrder = async (req, res) => {
   try {
-    const { user, Description, Product, status } = req.body;
+    const { user, Description, Product, status, packages } = req.body;
 
     if (!user) return res.status(400).json({ message: "User ID is required" });
     if (!Description)
@@ -42,6 +42,7 @@ const createOrder = async (req, res) => {
       Product,
       totalAmount: totalOrderAmount,
       status,
+      packages: packages || [],
     });
 
     await newOrder.save();
@@ -95,12 +96,14 @@ const getOrder = async (req, res) => {
   try {
     const orders = await Order.find({})
       .populate("Product.product", "name ProductModelrice ")
-      .populate("user", "name email");
+      .populate("user", "name email")
+      .lean();
 
     if (!orders || orders.length === 0) {
       return res.status(404).json({ message: "No orders found" });
     }
 
+    // Packages and package items are automatically included as embedded documents
     res.status(200).json(orders);
   } catch (error) {
     res
@@ -140,9 +143,10 @@ const updatestatusOrder = async (req, res) => {
       ipAddress: ipAddress,
     });
 
-    res
-      .status(200)
-      .json({ message: "Order successfully updated", order: updatedOrder });
+    res.status(200).json({
+      message: "Order successfully updated",
+      order: updatedOrder,
+    });
   } catch (error) {
     res
       .status(500)
@@ -164,8 +168,12 @@ const searchOrder = async (req, res) => {
         { status: { $regex: query, $options: "i" } },
         { "user.name": { $regex: query, $options: "i" } },
       ],
-    });
+    })
+      .populate("Product.product", "name ProductModelrice ")
+      .populate("user", "name email")
+      .lean();
 
+    // Packages and package items are automatically included as embedded documents
     res.json(searchdata);
   } catch (error) {
     res
