@@ -1,0 +1,11 @@
+services:
+  advanced-inventory-management-system-db:
+    image: mongo:8.0.16-rc1-noble
+    container_name: "advanced-inventory-management-system-db"
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "user"
+      MONGO_INITDB_ROOT_PASSWORD: "aiSai8wi7liu3buph4Geingaek1eef7r"
+      MONGO_INITDB_DATABASE: "advanced-inventory-management-system-db"
