@@ -1,6 +1,7 @@
 const Order = require("../models/Order");
 const logActivity = require("../libs/logger");
 const ProductModel = require("../models/Product");
+const { sendOrderUpdate, sendOrderCreation } = require("../libs/externalApiClient");
 
 const createOrder = async (req, res) => {
   try {
@@ -46,6 +47,11 @@ const createOrder = async (req, res) => {
     });
 
     await newOrder.save();
+
+    // Send order creation to external system (non-blocking)
+    sendOrderCreation(newOrder).catch((err) => {
+      console.error("Failed to send order creation to external system:", err);
+    });
 
     res.status(201).json({
       success: true,
@@ -141,6 +147,11 @@ const updatestatusOrder = async (req, res) => {
       entityId: updatedOrder._id,
       userId: userId,
       ipAddress: ipAddress,
+    });
+
+    // Send order update to external system (non-blocking)
+    sendOrderUpdate(updatedOrder).catch((err) => {
+      console.error("Failed to send order update to external system:", err);
     });
 
     res.status(200).json({

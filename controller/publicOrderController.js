@@ -1,5 +1,6 @@
 const Order = require("../models/Order");
 const ProductModel = require("../models/Product");
+const { sendOrderUpdate, sendOrderCreation } = require("../libs/externalApiClient");
 
 // Create order via public API
 const createOrderPublic = async (req, res) => {
@@ -79,6 +80,11 @@ const createOrderPublic = async (req, res) => {
 
     await newOrder.save();
 
+    // Send order creation to external system (non-blocking)
+    sendOrderCreation(newOrder).catch((err) => {
+      console.error("Failed to send order creation to external system:", err);
+    });
+
     res.status(201).json({
       success: true,
       message: "Order created successfully",
@@ -132,6 +138,11 @@ const updateOrderPublic = async (req, res) => {
         message: "Order not found",
       });
     }
+
+    // Send order update to external system (non-blocking)
+    sendOrderUpdate(updatedOrder).catch((err) => {
+      console.error("Failed to send order update to external system:", err);
+    });
 
     res.status(200).json({
       success: true,
