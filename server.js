@@ -15,6 +15,8 @@ const inventoryrouter = require("./Routers/inventoryRouter");
 const salesrouter = require("./Routers/salesRouter");
 const supplierrouter = require("./Routers/supplierrouter");
 const stocktransactionrouter = require("./Routers/stocktransactionrouter");
+const apikeyrouter = require("./Routers/apiKeyRouter");
+const publicapirouter = require("./Routers/publicApiRouter");
 
 require("dotenv").config();
 const PORT = process.env.PORT || 3003;
@@ -61,6 +63,8 @@ app.use("/api/inventory", inventoryrouter);
 app.use("/api/sales", salesrouter);
 app.use("/api/supplier", supplierrouter);
 app.use("/api/stocktransaction", stocktransactionrouter);
+app.use("/api/apikeys", apikeyrouter);
+app.use("/api/public", publicapirouter);
 
 server.listen(PORT, () => {
   MongoDBconfig();
