@@ -1,4 +1,4 @@
-const ActivityLog = require("../models/ActivityLogmodel");
+const ActivityLog = require("../models/ActivityLog");
 
 const logActivity = async ({
   action,

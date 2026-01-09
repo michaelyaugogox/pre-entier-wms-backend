@@ -1,4 +1,4 @@
-const Notification = require("../models/Notificationmodel");
+const Notification = require("../models/Notification");
 
 module.exports.createNotification = async (req, res) => {
   try {

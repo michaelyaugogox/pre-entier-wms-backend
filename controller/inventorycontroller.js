@@ -1,5 +1,5 @@
-const Inventory = require("../models/Inventorymodel");
-const Product = require("../models/Productmodel");
+const Inventory = require("../models/Inventory");
+const Product = require("../models/Product");
 
 module.exports.addOrUpdateInventory = async (req, res) => {
   try {

@@ -1,5 +1,5 @@
-const Sale = require("../models/Salesmodel");
-const ProductModel = require("../models/Productmodel");
+const Sale = require("../models/Sales");
+const ProductModel = require("../models/Product");
 
 module.exports.createSale = async (req, res) => {
   try {

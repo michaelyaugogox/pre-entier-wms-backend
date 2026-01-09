@@ -1,6 +1,6 @@
-const Order = require("../models/Ordermodel");
+const Order = require("../models/Order");
 const logActivity = require("../libs/logger");
-const ProductModel = require("../models/Productmodel");
+const ProductModel = require("../models/Product");
 
 const createOrder = async (req, res) => {
   try {

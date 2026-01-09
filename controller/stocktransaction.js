@@ -1,4 +1,4 @@
-const StockTransaction = require("../models/StockTranscationmodel");
+const StockTransaction = require("../models/StockTransaction");
 
 module.exports.createStockTransaction = async (req, res) => {
   try {
