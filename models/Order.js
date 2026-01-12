@@ -137,10 +137,19 @@ const OrderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "shipped", "delivered"],
+      enum: ["received", "processing", "completed"],
     },
 
     invoiceUrl: {
+      type: String,
+    },
+    externalOrderId: {
+      type: String,
+    },
+    orderId: {
+      type: String,
+    },
+    custRefNo: {
       type: String,
     },
     packages: [PackageSchema],

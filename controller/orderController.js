@@ -1,11 +1,11 @@
 const Order = require("../models/Order");
 const logActivity = require("../libs/logger");
 const ProductModel = require("../models/Product");
-const { sendOrderUpdate, sendOrderCreation } = require("../libs/externalApiClient");
+const { notifyExternalOrderStatus } = require("../libs/externalOrderStatusClient");
 
 const createOrder = async (req, res) => {
   try {
-    const { user, Description, Product, status, packages } = req.body;
+    const { user, Description, Product, status, packages, orderId, custRefNo, externalOrderId } = req.body;
 
     if (!user) return res.status(400).json({ message: "User ID is required" });
     if (!Description)
@@ -44,14 +44,12 @@ const createOrder = async (req, res) => {
       totalAmount: totalOrderAmount,
       status,
       packages: packages || [],
+      orderId,
+      custRefNo,
+      externalOrderId,
     });
 
     await newOrder.save();
-
-    // Send order creation to external system (non-blocking)
-    sendOrderCreation(newOrder).catch((err) => {
-      console.error("Failed to send order creation to external system:", err);
-    });
 
     res.status(201).json({
       success: true,
@@ -149,10 +147,12 @@ const updatestatusOrder = async (req, res) => {
       ipAddress: ipAddress,
     });
 
-    // Send order update to external system (non-blocking)
-    sendOrderUpdate(updatedOrder).catch((err) => {
-      console.error("Failed to send order update to external system:", err);
-    });
+    // Notify external system if status changed to "completed" (non-blocking)
+    if (updatedOrder.status === "completed" && updatedOrder.orderId) {
+      notifyExternalOrderStatus(updatedOrder.orderId, updatedOrder.status).catch((err) => {
+        console.error("Failed to notify external system of status change:", err);
+      });
+    }
 
     res.status(200).json({
       message: "Order successfully updated",

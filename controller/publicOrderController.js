@@ -1,11 +1,11 @@
 const Order = require("../models/Order");
 const ProductModel = require("../models/Product");
-const { sendOrderUpdate, sendOrderCreation } = require("../libs/externalApiClient");
+const { notifyExternalOrderStatus } = require("../libs/externalOrderStatusClient");
 
 // Create order via public API
 const createOrderPublic = async (req, res) => {
   try {
-    const { user, Description, Product, status, packages } = req.body;
+    const { user, Description, Product, status, packages, orderId, custRefNo, externalOrderId } = req.body;
     const apiUser = req.user; // User associated with API key
 
     // Use the API key's user if user is not provided
@@ -76,14 +76,12 @@ const createOrderPublic = async (req, res) => {
       totalAmount: totalOrderAmount,
       status,
       packages: packages || [],
+      orderId,
+      custRefNo,
+      externalOrderId,
     });
 
     await newOrder.save();
-
-    // Send order creation to external system (non-blocking)
-    sendOrderCreation(newOrder).catch((err) => {
-      console.error("Failed to send order creation to external system:", err);
-    });
 
     res.status(201).json({
       success: true,
@@ -96,6 +94,9 @@ const createOrderPublic = async (req, res) => {
         totalAmount: newOrder.totalAmount,
         status: newOrder.status,
         packages: newOrder.packages,
+        orderId: newOrder.orderId,
+        custRefNo: newOrder.custRefNo,
+        externalOrderId: newOrder.externalOrderId,
         createdAt: newOrder.createdAt,
       },
     });
@@ -139,10 +140,12 @@ const updateOrderPublic = async (req, res) => {
       });
     }
 
-    // Send order update to external system (non-blocking)
-    sendOrderUpdate(updatedOrder).catch((err) => {
-      console.error("Failed to send order update to external system:", err);
-    });
+    // Notify external system if status changed to "completed" (non-blocking)
+    if (updatedOrder.status === "completed" && updatedOrder.orderId) {
+      notifyExternalOrderStatus(updatedOrder.orderId, updatedOrder.status).catch((err) => {
+        console.error("Failed to notify external system of status change:", err);
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -155,6 +158,9 @@ const updateOrderPublic = async (req, res) => {
         totalAmount: updatedOrder.totalAmount,
         status: updatedOrder.status,
         packages: updatedOrder.packages,
+        orderId: updatedOrder.orderId,
+        custRefNo: updatedOrder.custRefNo,
+        externalOrderId: updatedOrder.externalOrderId,
         updatedAt: updatedOrder.updatedAt,
       },
     });
