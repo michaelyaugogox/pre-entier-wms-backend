@@ -2,10 +2,6 @@ const mongoose = require("mongoose");
 
 const StockTranscationSchema = new mongoose.Schema(
   {
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
-    },
     type: {
       type: String,
       enum: ["Stock-in", "Stock-out"],

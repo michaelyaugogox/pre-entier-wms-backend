@@ -1,5 +1,4 @@
 const Sale = require("../models/Sales");
-const ProductModel = require("../models/Product");
 
 module.exports.createSale = async (req, res) => {
   try {
@@ -20,21 +19,6 @@ module.exports.createSale = async (req, res) => {
     }
 
     const totalAmount = products.quantity * products.price;
-
-    const productRecord = await ProductModel.findById(products.product);
-    if (!productRecord)
-      return res.status(404).json({ message: "Product not found" });
-
-    if (productRecord.quantity < products.quantity) {
-      return res.status(400).json({
-        message: "Insufficient product quantity",
-        available: productRecord.quantity,
-        requested: quantity,
-      });
-    }
-
-    productRecord.quantity -= products.quantity;
-    await productRecord.save();
 
     const newSale = new Sale({
       customerName,
@@ -64,7 +48,6 @@ module.exports.createSale = async (req, res) => {
 module.exports.getAllSales = async (req, res) => {
   try {
     const sales = await Sale.find()
-      .populate("products.product")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, sales });

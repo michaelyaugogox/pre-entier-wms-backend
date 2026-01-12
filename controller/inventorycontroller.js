@@ -1,5 +1,4 @@
 const Inventory = require("../models/Inventory");
-const Product = require("../models/Product");
 
 module.exports.addOrUpdateInventory = async (req, res) => {
   try {
@@ -41,7 +40,7 @@ module.exports.addOrUpdateInventory = async (req, res) => {
 
 module.exports.getAllInventory = async (req, res) => {
   try {
-    const inventories = await Inventory.find().populate("product");
+    const inventories = await Inventory.find();
 
     res.status(200).json({ success: true, inventories });
   } catch (error) {
@@ -55,9 +54,7 @@ module.exports.getInventoryByProduct = async (req, res) => {
   try {
     const { productId } = req.params;
 
-    const inventory = await Inventory.findOne({ product: productId }).populate(
-      "product",
-    );
+    const inventory = await Inventory.findOne({ product: productId });
 
     if (!inventory) {
       return res

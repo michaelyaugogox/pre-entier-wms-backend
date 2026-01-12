@@ -91,7 +91,6 @@ module.exports.getStockTransactionsBySupplier = async (req, res) => {
     const { supplierId } = req.params;
 
     const transactions = await StockTransaction.find({ supplier: supplierId })
-      .populate("product")
       .sort({ transactionDate: -1 });
 
     if (!transactions || transactions.length === 0) {
@@ -122,18 +121,9 @@ module.exports.searchStocks = async (req, res) => {
       return res.status(400).json({ message: "Query parameter is required" });
     }
 
-    const stocks = await StockTransaction.find({})
-      .populate("product")
-      .then((transactions) => {
-        return transactions.filter(
-          (transaction) =>
-            transaction.type.toLowerCase().includes(query.toLowerCase()) ||
-            (transaction.product &&
-              transaction.product.name
-                .toLowerCase()
-                .includes(query.toLowerCase())),
-        );
-      });
+    const stocks = await StockTransaction.find({
+      type: { $regex: query, $options: "i" }
+    });
 
     res.json(stocks);
   } catch (error) {

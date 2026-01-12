@@ -1,11 +1,10 @@
 const Order = require("../models/Order");
-const ProductModel = require("../models/Product");
 const { notifyExternalOrderStatus } = require("../libs/externalOrderStatusClient");
 
 // Create order via public API
 const createOrderPublic = async (req, res) => {
   try {
-    const { user, Description, Product, status, packages, orderId, custRefNo, externalOrderId } = req.body;
+    const { user, Description, totalAmount, status, packages, orderId, custRefNo } = req.body;
     const apiUser = req.user; // User associated with API key
 
     // Use the API key's user if user is not provided
@@ -25,60 +24,21 @@ const createOrderPublic = async (req, res) => {
       });
     }
 
-    if (!Product?.product) {
+    if (!totalAmount) {
       return res.status(400).json({
         success: false,
-        message: "Product ID is required",
+        message: "Total amount is required",
       });
     }
-
-    if (!Product?.price) {
-      return res.status(400).json({
-        success: false,
-        message: "Price is required",
-      });
-    }
-
-    if (!Product?.quantity) {
-      return res.status(400).json({
-        success: false,
-        message: "Quantity is required",
-      });
-    }
-
-    const { product, price, quantity } = Product;
-    const totalOrderAmount = price * quantity;
-
-    const productRecord = await ProductModel.findById(product);
-    if (!productRecord) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
-
-    if (productRecord.quantity < quantity) {
-      return res.status(400).json({
-        success: false,
-        message: "Insufficient product quantity",
-        available: productRecord.quantity,
-        requested: quantity,
-      });
-    }
-
-    productRecord.quantity -= quantity;
-    await productRecord.save();
 
     const newOrder = new Order({
       user: orderUser,
       Description,
-      Product,
-      totalAmount: totalOrderAmount,
+      totalAmount,
       status,
       packages: packages || [],
       orderId,
       custRefNo,
-      externalOrderId,
     });
 
     await newOrder.save();
@@ -90,13 +50,11 @@ const createOrderPublic = async (req, res) => {
         id: newOrder._id,
         user: newOrder.user,
         Description: newOrder.Description,
-        Product: newOrder.Product,
         totalAmount: newOrder.totalAmount,
         status: newOrder.status,
         packages: newOrder.packages,
         orderId: newOrder.orderId,
         custRefNo: newOrder.custRefNo,
-        externalOrderId: newOrder.externalOrderId,
         createdAt: newOrder.createdAt,
       },
     });
@@ -115,18 +73,6 @@ const updateOrderPublic = async (req, res) => {
   try {
     const { orderId } = req.params;
     const updates = req.body;
-
-    if (updates.Product && !Array.isArray(updates.Product)) {
-      const { price, quantity } = updates.Product;
-      if (price && quantity) {
-        updates.totalAmount = price * quantity;
-      }
-    } else if (updates.Product && Array.isArray(updates.Product)) {
-      updates.totalAmount = updates.Product.reduce(
-        (sum, item) => sum + item.quantity * item.price,
-        0
-      );
-    }
 
     const updatedOrder = await Order.findByIdAndUpdate(orderId, updates, {
       new: true,
@@ -154,13 +100,11 @@ const updateOrderPublic = async (req, res) => {
         id: updatedOrder._id,
         user: updatedOrder.user,
         Description: updatedOrder.Description,
-        Product: updatedOrder.Product,
         totalAmount: updatedOrder.totalAmount,
         status: updatedOrder.status,
         packages: updatedOrder.packages,
         orderId: updatedOrder.orderId,
         custRefNo: updatedOrder.custRefNo,
-        externalOrderId: updatedOrder.externalOrderId,
         updatedAt: updatedOrder.updatedAt,
       },
     });
@@ -180,7 +124,6 @@ const getOrderPublic = async (req, res) => {
     const { orderId } = req.params;
 
     const order = await Order.findById(orderId)
-      .populate("Product.product", "name price")
       .populate("user", "name email")
       .lean();
 
@@ -216,7 +159,6 @@ const listOrdersPublic = async (req, res) => {
     }
 
     const orders = await Order.find(query)
-      .populate("Product.product", "name price")
       .populate("user", "name email")
       .limit(limit * 1)
       .skip((page - 1) * limit)

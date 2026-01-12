@@ -1,52 +1,36 @@
 const Order = require("../models/Order");
 const logActivity = require("../libs/logger");
-const ProductModel = require("../models/Product");
-const { notifyExternalOrderStatus } = require("../libs/externalOrderStatusClient");
+const {
+  notifyExternalOrderStatus,
+} = require("../libs/externalOrderStatusClient");
 
 const createOrder = async (req, res) => {
   try {
-    const { user, Description, Product, status, packages, orderId, custRefNo, externalOrderId } = req.body;
+    const {
+      user,
+      Description,
+      totalAmount,
+      status,
+      packages,
+      orderId,
+      custRefNo,
+    } = req.body;
 
     if (!user) return res.status(400).json({ message: "User ID is required" });
     if (!Description)
       return res.status(400).json({ message: "Description is required" });
     if (!status) return res.status(400).json({ message: "Status is required" });
-    if (!Product?.product)
-      return res.status(400).json({ message: "Product ID is required" });
-    if (!Product?.price)
-      return res.status(400).json({ message: "Price is required" });
-    if (!Product?.quantity)
-      return res.status(400).json({ message: "Quantity is required" });
-
-    const { product, price, quantity } = Product;
-
-    const totalOrderAmount = price * quantity;
-
-    const productRecord = await ProductModel.findById(product);
-    if (!productRecord)
-      return res.status(404).json({ message: "Product not found" });
-
-    if (productRecord.quantity < quantity) {
-      return res.status(400).json({
-        message: "Insufficient product quantity",
-        available: productRecord.quantity,
-        requested: quantity,
-      });
-    }
-
-    productRecord.quantity -= quantity;
-    await productRecord.save();
+    if (!totalAmount)
+      return res.status(400).json({ message: "Total amount is required" });
 
     const newOrder = new Order({
       user,
       Description,
-      Product,
-      totalAmount: totalOrderAmount,
+      totalAmount,
       status,
       packages: packages || [],
       orderId,
       custRefNo,
-      externalOrderId,
     });
 
     await newOrder.save();
@@ -99,7 +83,6 @@ const Removeorder = async (req, res) => {
 const getOrder = async (req, res) => {
   try {
     const orders = await Order.find({})
-      .populate("Product.product", "name ProductModelrice ")
       .populate("user", "name email")
       .lean();
 
@@ -123,13 +106,6 @@ const updatestatusOrder = async (req, res) => {
     const userId = req.user._id;
     const ipAddress = req.ip;
 
-    if (updates.Product && Array.isArray(updates.Product)) {
-      updates.totalAmount = updates.Product.reduce(
-        (sum, item) => sum + item.quantity * item.ProductModelrice,
-        0
-      );
-    }
-
     const updatedOrder = await Order.findByIdAndUpdate(OrderId, updates, {
       new: true,
     });
@@ -149,8 +125,14 @@ const updatestatusOrder = async (req, res) => {
 
     // Notify external system if status changed to "completed" (non-blocking)
     if (updatedOrder.status === "completed" && updatedOrder.orderId) {
-      notifyExternalOrderStatus(updatedOrder.orderId, updatedOrder.status).catch((err) => {
-        console.error("Failed to notify external system of status change:", err);
+      notifyExternalOrderStatus(
+        updatedOrder.orderId,
+        updatedOrder.status
+      ).catch((err) => {
+        console.error(
+          "Failed to notify external system of status change:",
+          err
+        );
       });
     }
 
@@ -180,7 +162,6 @@ const searchOrder = async (req, res) => {
         { "user.name": { $regex: query, $options: "i" } },
       ],
     })
-      .populate("Product.product", "name ProductModelrice ")
       .populate("user", "name email")
       .lean();
 

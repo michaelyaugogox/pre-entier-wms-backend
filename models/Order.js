@@ -120,17 +120,6 @@ const OrderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    Product: {
-      product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-      quantity: {
-        type: Number,
-        required: true,
-      },
-      price: {
-        type: Number,
-        required: true,
-      },
-    },
     totalAmount: {
       type: Number,
       required: true,
@@ -141,9 +130,6 @@ const OrderSchema = new mongoose.Schema(
     },
 
     invoiceUrl: {
-      type: String,
-    },
-    externalOrderId: {
       type: String,
     },
     orderId: {
