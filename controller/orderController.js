@@ -9,7 +9,6 @@ const createOrder = async (req, res) => {
     const {
       user,
       description,
-      status,
       packages,
       orderId,
       custRefNo,
@@ -18,12 +17,10 @@ const createOrder = async (req, res) => {
     if (!user) return res.status(400).json({ message: "User ID is required" });
     if (!description)
       return res.status(400).json({ message: "Description is required" });
-    if (!status) return res.status(400).json({ message: "Status is required" });
 
     const newOrder = new Order({
       user,
       description,
-      status,
       packages: packages || [],
       orderId,
       custRefNo,

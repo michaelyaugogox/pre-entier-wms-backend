@@ -123,6 +123,7 @@ const OrderSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["received", "processing", "completed"],
+      default: "received",
     },
     invoiceUrl: {
       type: String,

@@ -9,7 +9,6 @@ const createOrderPublic = async (req, res) => {
     const {
       user,
       description,
-      status,
       packages,
       orderId,
       custRefNo,
@@ -26,17 +25,9 @@ const createOrderPublic = async (req, res) => {
       });
     }
 
-    if (!status) {
-      return res.status(400).json({
-        success: false,
-        message: "Status is required",
-      });
-    }
-
     const newOrder = new Order({
       user: orderUser,
       description,
-      status,
       packages: packages || [],
       orderId,
       custRefNo,
@@ -74,10 +65,14 @@ const updateOrderPublic = async (req, res) => {
     const { orderId } = req.params;
     const updates = req.body;
 
-    const updatedOrder = await Order.findByIdAndUpdate(orderId, updates, {
-      new: true,
-      runValidators: true,
-    });
+    const updatedOrder = await Order.findOneAndUpdate(
+      { orderId: orderId },
+      updates,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     if (!updatedOrder) {
       return res.status(404).json({
