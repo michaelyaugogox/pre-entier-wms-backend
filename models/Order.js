@@ -116,19 +116,14 @@ const OrderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    Description: {
+    description: {
       type: String,
-      required: true,
-    },
-    totalAmount: {
-      type: Number,
       required: true,
     },
     status: {
       type: String,
       enum: ["received", "processing", "completed"],
     },
-
     invoiceUrl: {
       type: String,
     },

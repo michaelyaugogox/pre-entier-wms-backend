@@ -8,8 +8,7 @@ const createOrder = async (req, res) => {
   try {
     const {
       user,
-      Description,
-      totalAmount,
+      description,
       status,
       packages,
       orderId,
@@ -17,16 +16,13 @@ const createOrder = async (req, res) => {
     } = req.body;
 
     if (!user) return res.status(400).json({ message: "User ID is required" });
-    if (!Description)
+    if (!description)
       return res.status(400).json({ message: "Description is required" });
     if (!status) return res.status(400).json({ message: "Status is required" });
-    if (!totalAmount)
-      return res.status(400).json({ message: "Total amount is required" });
 
     const newOrder = new Order({
       user,
-      Description,
-      totalAmount,
+      description,
       status,
       packages: packages || [],
       orderId,
@@ -82,9 +78,7 @@ const Removeorder = async (req, res) => {
 
 const getOrder = async (req, res) => {
   try {
-    const orders = await Order.find({})
-      .populate("user", "name email")
-      .lean();
+    const orders = await Order.find({}).populate("user", "name email").lean();
 
     if (!orders || orders.length === 0) {
       return res.status(404).json({ message: "No orders found" });
