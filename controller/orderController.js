@@ -116,9 +116,20 @@ const updatestatusOrder = async (req, res) => {
 
     // Notify external system if status changed to "completed" (non-blocking)
     if (updatedOrder.status === "completed" && updatedOrder.orderId) {
+      // Use the webhook URL from the order's webhook reference
+      const Webhook = require("../models/Webhook");
+      let webhookUrl = null;
+      if (updatedOrder.webhook) {
+        const webhook = await Webhook.findById(updatedOrder.webhook);
+        if (webhook && webhook.isActive && webhook.events.includes("order.completed")) {
+          webhookUrl = webhook.url;
+        }
+      }
+      
       notifyExternalOrderStatus(
         updatedOrder.orderId,
-        updatedOrder.status
+        updatedOrder.status,
+        webhookUrl
       ).catch((err) => {
         console.error(
           "Failed to notify external system of status change:",

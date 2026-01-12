@@ -14,6 +14,7 @@ const salesrouter = require("./Routers/salesRouter");
 const supplierrouter = require("./Routers/supplierrouter");
 const stocktransactionrouter = require("./Routers/stocktransactionrouter");
 const apikeyrouter = require("./Routers/apiKeyRouter");
+const webhookrouter = require("./Routers/webhookRouter");
 const publicapirouter = require("./Routers/publicApiRouter");
 
 require("dotenv").config();
@@ -60,6 +61,7 @@ app.use("/api/sales", salesrouter);
 app.use("/api/supplier", supplierrouter);
 app.use("/api/stocktransaction", stocktransactionrouter);
 app.use("/api/apikeys", apikeyrouter);
+app.use("/api/webhooks", webhookrouter);
 app.use("/api/public", publicapirouter);
 
 server.listen(PORT, () => {
