@@ -116,10 +116,6 @@ const OrderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    webhook: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Webhook",
-    },
     description: {
       type: String,
       required: true,

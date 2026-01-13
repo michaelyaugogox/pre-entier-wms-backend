@@ -1,13 +1,10 @@
 const axios = require("axios");
 
 // Send order status update to external system when status changes to "completed"
-const notifyExternalOrderStatus = async (orderId, status, webhookUrl = null) => {
+const notifyExternalOrderStatus = async (orderId, status, webhookUrl, webhookSecret) => {
   try {
-    const externalStatusApiUrl = webhookUrl || process.env.EXTERNAL_STATUS_API_URL;
-    const externalApiKey = process.env.EXTERNAL_API_KEY;
-
-    if (!externalStatusApiUrl) {
-      console.warn("No webhook URL configured. Skipping external status notification.");
+    if (!webhookUrl) {
+      console.warn("No webhook URL provided. Skipping external status notification.");
       return null;
     }
 
@@ -20,14 +17,14 @@ const notifyExternalOrderStatus = async (orderId, status, webhookUrl = null) => 
       "Content-Type": "application/json",
     };
 
-    // Add API key to headers if configured
-    if (externalApiKey) {
-      headers["X-API-Key"] = externalApiKey;
+    // Add webhook secret to headers if provided
+    if (webhookSecret) {
+      headers["x-webhook-secret"] = webhookSecret;
     }
 
     console.log(`Notifying external system of order status change: ${orderId} -> ${status}`);
 
-    const response = await axios.post(externalStatusApiUrl, payload, {
+    const response = await axios.post(webhookUrl, payload, {
       headers,
       timeout: 10000, // 10 second timeout
     });

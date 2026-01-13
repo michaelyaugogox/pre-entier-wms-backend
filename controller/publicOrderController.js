@@ -6,14 +6,7 @@ const {
 // Create order via public API
 const createOrderPublic = async (req, res) => {
   try {
-    const {
-      user,
-      description,
-      packages,
-      orderId,
-      custRefNo,
-      webhookId,
-    } = req.body;
+    const { user, description, packages, orderId, custRefNo } = req.body;
     const apiUser = req.user; // User associated with API key
 
     // Use the API key's user if user is not provided
@@ -28,7 +21,6 @@ const createOrderPublic = async (req, res) => {
 
     const newOrder = new Order({
       user: orderUser,
-      webhook: webhookId || null,
       description,
       packages: packages || [],
       orderId,
@@ -83,27 +75,30 @@ const updateOrderPublic = async (req, res) => {
       });
     }
 
-    // Notify external system if status changed to "completed" (non-blocking)
-    if (updatedOrder.status === "completed" && updatedOrder.orderId) {
-      // Use the webhook URL from the order's webhook reference
+    // Notify all active webhooks if status changed (non-blocking)
+    if (updates.status && updatedOrder.orderId) {
       const Webhook = require("../models/Webhook");
-      let webhookUrl = null;
-      if (updatedOrder.webhook) {
-        const webhook = await Webhook.findById(updatedOrder.webhook);
-        if (webhook && webhook.isActive && webhook.events.includes("order.completed")) {
-          webhookUrl = webhook.url;
-        }
-      }
-      
-      notifyExternalOrderStatus(
-        updatedOrder.orderId,
-        updatedOrder.status,
-        webhookUrl
-      ).catch((err) => {
-        console.error(
-          "Failed to notify external system of status change:",
-          err
-        );
+      const apiUser = req.user;
+      const eventName = `order.${updatedOrder.status}`;
+
+      const webhooks = await Webhook.find({
+        user: apiUser._id,
+        isActive: true,
+        events: eventName,
+      });
+
+      webhooks.forEach((webhook) => {
+        notifyExternalOrderStatus(
+          updatedOrder.orderId,
+          updatedOrder.status,
+          webhook.url,
+          webhook.secret
+        ).catch((err) => {
+          console.error(
+            `Failed to notify webhook ${webhook._id} for ${eventName}:`,
+            err
+          );
+        });
       });
     }
 

@@ -6,13 +6,7 @@ const {
 
 const createOrder = async (req, res) => {
   try {
-    const {
-      user,
-      description,
-      packages,
-      orderId,
-      custRefNo,
-    } = req.body;
+    const { user, description, packages, orderId, custRefNo } = req.body;
 
     if (!user) return res.status(400).json({ message: "User ID is required" });
     if (!description)
@@ -75,14 +69,29 @@ const Removeorder = async (req, res) => {
 
 const getOrder = async (req, res) => {
   try {
-    const orders = await Order.find({}).populate("user", "name email").lean();
+    const { page = 1, limit = 10, status } = req.query;
+    const query = {};
 
-    if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: "No orders found" });
+    if (status) {
+      query.status = status;
     }
 
-    // Packages and package items are automatically included as embedded documents
-    res.status(200).json(orders);
+    const orders = await Order.find(query)
+      .populate("user", "name email")
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const count = await Order.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      orders: orders,
+      totalPages: Math.ceil(count / limit),
+      currentPage: parseInt(page),
+      totalOrders: count,
+    });
   } catch (error) {
     res
       .status(500)
@@ -114,27 +123,29 @@ const updatestatusOrder = async (req, res) => {
       ipAddress: ipAddress,
     });
 
-    // Notify external system if status changed to "completed" (non-blocking)
-    if (updatedOrder.status === "completed" && updatedOrder.orderId) {
-      // Use the webhook URL from the order's webhook reference
+    // Notify all active webhooks if status changed (non-blocking)
+    if (updates.status && updatedOrder.orderId) {
       const Webhook = require("../models/Webhook");
-      let webhookUrl = null;
-      if (updatedOrder.webhook) {
-        const webhook = await Webhook.findById(updatedOrder.webhook);
-        if (webhook && webhook.isActive && webhook.events.includes("order.completed")) {
-          webhookUrl = webhook.url;
-        }
-      }
-      
-      notifyExternalOrderStatus(
-        updatedOrder.orderId,
-        updatedOrder.status,
-        webhookUrl
-      ).catch((err) => {
-        console.error(
-          "Failed to notify external system of status change:",
-          err
-        );
+      const eventName = `order.${updatedOrder.status}`;
+
+      const webhooks = await Webhook.find({
+        user: updatedOrder.user,
+        isActive: true,
+        events: eventName,
+      });
+
+      webhooks.forEach((webhook) => {
+        notifyExternalOrderStatus(
+          updatedOrder.orderId,
+          updatedOrder.status,
+          webhook.url,
+          webhook.secret
+        ).catch((err) => {
+          console.error(
+            `Failed to notify webhook ${webhook._id} for ${eventName}:`,
+            err
+          );
+        });
       });
     }
 
