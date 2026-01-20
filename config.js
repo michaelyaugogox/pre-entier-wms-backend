@@ -6,7 +6,7 @@ module.exports = {
   NODE_ENV: process.env.NODE_ENV || "production",
 
   // Database Configuration
-  MONGODB_URL: process.env.MONGODB_URL,
+  MONGODB_URL: process.env.ORMONGO_RS_URL,
 
   // JWT Configuration
   JWT_SECRET: process.env.JWT_SECRET,
