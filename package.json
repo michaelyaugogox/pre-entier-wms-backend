@@ -7,7 +7,10 @@
     "dev": "nodemon server.js",
     "prettier": "npx prettier . --write",
     "docker:build": "docker build -t pre-entier-wms-backend:$(git rev-parse --short HEAD) .",
-    "docker:run": "docker run --rm --env-file .env -p 3000:3000 --name pre-entier-wms pre-entier-wms-backend:$(git rev-parse --short HEAD)"
+    "docker:run": "docker run --rm --env-file .env -p 3000:3000 --name pre-entier-wms pre-entier-wms-backend:$(git rev-parse --short HEAD)",
+    "heroku:push": "heroku container:push web -a entier-wms-demo-backend",
+    "heroku:release": "heroku container:release web -a entier-wms-demo-backend",
+    "heroku:log": "heroku logs --tail -a entier-wms-demo-backend"
   },
   "engines": {
     "node": "20.17.0"
