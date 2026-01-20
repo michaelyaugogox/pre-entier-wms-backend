@@ -13,10 +13,6 @@ module.exports.createNotification = async (req, res) => {
     const notification = new Notification({ name, type });
     await notification.save();
 
-    const io = req.app.get("io");
-
-    io.emit("newNotification", notification);
-
     res
       .status(201)
       .json({

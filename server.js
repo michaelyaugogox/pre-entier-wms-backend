@@ -1,72 +1,127 @@
 const express = require("express");
-const { MongoDBconfig } = require("./libs/mongoconfig");
-const { Server } = require("socket.io");
-const http = require("http");
+const mongoose = require("mongoose");
 const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
-const authrouter = require("./Routers/authRouther");
-const orderrouter = require("./Routers/orderRouter");
-const notificationrouter = require("./Routers/notificationRouters");
-const activityrouter = require("./Routers/activityRouter");
-const inventoryrouter = require("./Routers/inventoryRouter");
-const salesrouter = require("./Routers/salesRouter");
-const supplierrouter = require("./Routers/supplierrouter");
-const stocktransactionrouter = require("./Routers/stocktransactionrouter");
-const apikeyrouter = require("./Routers/apiKeyRouter");
-const webhookrouter = require("./Routers/webhookRouter");
-const publicapirouter = require("./Routers/publicApiRouter");
+const config = require("./config");
+const authrouter = require("./routers/authRouther");
+const orderrouter = require("./routers/orderRouter");
+const notificationrouter = require("./routers/notificationRouters");
+const activityrouter = require("./routers/activityRouter");
+const inventoryrouter = require("./routers/inventoryRouter");
+const salesrouter = require("./routers/salesRouter");
+const supplierrouter = require("./routers/supplierrouter");
+const stocktransactionrouter = require("./routers/stocktransactionrouter");
+const apikeyrouter = require("./routers/apiKeyRouter");
+const webhookrouter = require("./routers/webhookRouter");
+const publicapirouter = require("./routers/publicApiRouter");
 
-require("dotenv").config();
-const PORT = process.env.PORT || 3003;
+async function startServer() {
+  try {
+    const { PORT, CORS_ORIGIN } = require("./config");
+    const app = express();
 
-const app = express();
-const server = http.createServer(app);
+    app.use(
+      cors({
+        origin: CORS_ORIGIN,
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true,
+      }),
+    );
 
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:4000",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  },
-});
+    app.use(express.json({ limit: "10mb" }));
+    app.use(morgan(config.NODE_ENV === "production" ? "combined" : "dev"));
+    app.use(cookieParser());
 
-app.use(
-  cors({
-    origin: "http://localhost:4000",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
+    // Health check endpoint
+    app.get("/health", (req, res) => {
+      res
+        .status(200)
+        .json({ status: "ok", timestamp: new Date().toISOString() });
+    });
 
-io.on("connection", (socket) => {
-  console.log("A user connected");
+    app.use("/api/auth", authrouter);
+    app.use("/api/order", orderrouter);
+    app.use("/api/notification", notificationrouter);
+    app.use("/api/activitylogs", activityrouter(app));
+    app.use("/api/inventory", inventoryrouter);
+    app.use("/api/sales", salesrouter);
+    app.use("/api/supplier", supplierrouter);
+    app.use("/api/stocktransaction", stocktransactionrouter);
+    app.use("/api/apikeys", apikeyrouter);
+    app.use("/api/webhooks", webhookrouter);
+    app.use("/api/public", publicapirouter);
 
-  socket.on("disconnect", () => {
-    console.log("A user disconnected");
-  });
-});
+    // 404 handler
+    app.use((req, res) => {
+      res.status(404).json({ error: "Route not found" });
+    });
 
-app.use(express.json({ limit: "10mb" }));
-app.use(express.json());
-app.use(morgan("combined"));
-app.set("io", io);
-app.use(cookieParser());
-app.use("/api/auth", authrouter);
-app.use("/api/order", orderrouter);
-app.use("/api/notification", notificationrouter);
-app.use("/api/activitylogs", activityrouter(app));
-app.use("/api/inventory", inventoryrouter);
-app.use("/api/sales", salesrouter);
-app.use("/api/supplier", supplierrouter);
-app.use("/api/stocktransaction", stocktransactionrouter);
-app.use("/api/apikeys", apikeyrouter);
-app.use("/api/webhooks", webhookrouter);
-app.use("/api/public", publicapirouter);
+    // Global error handler
+    app.use((err, req, res, next) => {
+      console.error("Unhandled error:", err);
+      res.status(500).json({
+        error:
+          config.NODE_ENV === "production"
+            ? "Internal server error"
+            : err.message,
+      });
+    });
 
-server.listen(PORT, () => {
-  MongoDBconfig();
-  console.log(`The server is running at port ${PORT}`);
-});
+    // MongoDB connection
+    await mongoose.connect(config.MONGODB_URL, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
 
-module.exports = { io, server };
+    console.log("connected to database successfully");
+
+    mongoose.connection.on("error", (err) => {
+      console.error("MongoDB connection error:", err);
+    });
+
+    mongoose.connection.on("disconnected", () => {
+      console.warn("MongoDB disconnected");
+    });
+
+    const server = app.listen(PORT, () => {
+      console.log(`The server is running at port ${PORT}`);
+    });
+
+    // Graceful shutdown
+    const shutdown = (signal) => {
+      console.log(`${signal} received, shutting down gracefully...`);
+
+      server.close(() => {
+        console.log("HTTP server closed");
+        mongoose.connection.close();
+        process.exit(0);
+      });
+
+      // Force shutdown after 10 seconds
+      setTimeout(() => {
+        console.error("Forcing shutdown after timeout");
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
+
+    // Handle uncaught errors
+    process.on("uncaughtException", (err) => {
+      console.error("Uncaught Exception:", err);
+      shutdown("uncaughtException");
+    });
+
+    process.on("unhandledRejection", (reason, promise) => {
+      console.error("Unhandled Rejection at:", promise, "reason:", reason);
+      shutdown("unhandledRejection");
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  }
+}
+
+startServer();

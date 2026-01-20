@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-require("dotenv").config();
+const config = require("../config");
 
 module.exports.authmiddleware = async (req, res, next) => {
   try {
@@ -12,7 +12,7 @@ module.exports.authmiddleware = async (req, res, next) => {
         .json({ message: "Unauthorized: No token provided." });
     }
 
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+    const decodedToken = jwt.verify(token, config.JWT_SECRET);
 
     if (!decodedToken || !decodedToken.userId) {
       return res.status(401).json({ message: "Unauthorized: Invalid token." });

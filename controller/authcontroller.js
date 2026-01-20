@@ -1,12 +1,11 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../libs/Tokengenerator");
-const Cloundinary = require("../libs/Cloundinary");
 const logActivity = require("../libs/logger");
 
 module.exports.signup = async (req, res) => {
   try {
-    const { name, email, password, ProfilePic, role } = req.body;
+    const { name, email, password, role } = req.body;
 
     const duplicatedUser = await User.findOne({ email });
     if (duplicatedUser) {
@@ -19,7 +18,6 @@ module.exports.signup = async (req, res) => {
       name,
       email,
       password: hashedpassword,
-      ProfilePic: "",
       role,
     });
 
@@ -33,7 +31,6 @@ module.exports.signup = async (req, res) => {
         name: savedUser.name,
         email: savedUser.email,
         role: savedUser.role,
-        ProfilePic: savedUser.ProfilePic,
         token,
       },
     });
@@ -88,7 +85,6 @@ module.exports.login = async (req, res) => {
         name: duplicatedUser.name,
         email: duplicatedUser.email,
         role: duplicatedUser.role,
-        ProfilePic: duplicatedUser.ProfilePic,
         token,
       },
     });
@@ -108,53 +104,6 @@ module.exports.logout = async (req, res) => {
       message: "An error occurred during logout. Please try again.",
       error: error.message,
     });
-  }
-};
-
-module.exports.updateProfile = async (req, res) => {
-  try {
-    const { ProfilePic } = req.body;
-    const userId = req.user?._id;
-    const ipAddress = req.ip;
-
-    if (!userId) {
-      return res.status(400).json({ message: "User not authenticated" });
-    }
-
-    if (ProfilePic) {
-      try {
-        const uploadResponse = await Cloundinary.uploader.upload(ProfilePic, {
-          folder: "profile_inventory_system",
-          upload_preset: "upload",
-        });
-
-        const updatedUser = await User.findOneAndUpdate(
-          { _id: userId },
-          { ProfilePic: uploadResponse.secure_url },
-          { new: true },
-        );
-
-        if (!updatedUser) {
-          return res.status(404).json({ message: "User not found" });
-        }
-
-        return res.status(200).json({
-          message: "Profile updated successfully",
-          updatedUser,
-        });
-      } catch (cloudinaryError) {
-        console.error("Cloudinary upload failed:", cloudinaryError);
-        return res.status(500).json({
-          message: "Image upload failed",
-          error: cloudinaryError.message,
-        });
-      }
-    } else {
-      return res.status(400).json({ message: "No profile picture provided" });
-    }
-  } catch (error) {
-    console.error("Error in update profile Controller", error.message);
-    res.status(500).json({ message: "Internal Server Error", error });
   }
 };
 

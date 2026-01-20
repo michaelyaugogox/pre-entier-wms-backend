@@ -3,40 +3,11 @@ const router = express.Router();
 const ActivityLog = require("../models/ActivityLog");
 
 module.exports = (app) => {
-  const io = app.get("io");
-
-  if (!io) {
-    console.error(
-      "Socket.IO is not initialized! Make sure app.set('io', io) is called.",
-    );
-    return router;
-  }
-
-  io.on("connection", (socket) => {
-    console.log("A user connected");
-
-    socket.on("disconnect", () => {
-      console.log("User disconnected");
-    });
-  });
-
-  const emitNewLog = async (logId) => {
-    try {
-      const log = await ActivityLog.findById(logId)
-        .populate("userId")
-        .select("-password");
-      io.emit("newActivityLog", log);
-    } catch (error) {
-      console.error("Error emitting new log:", error);
-    }
-  };
-
   router.post("/addLog", async (req, res) => {
     try {
       const newLog = new ActivityLog(req.body);
       const savedLog = await newLog.save();
       console.log("Saved log:", savedLog);
-      emitNewLog(savedLog._id);
 
       res.status(201).json(savedLog);
     } catch (error) {
