@@ -10,7 +10,9 @@
     "docker:run": "docker run --rm --env-file .env -p 3000:3000 --name pre-entier-wms pre-entier-wms-backend:$(git rev-parse --short HEAD)",
     "heroku:push": "heroku container:push web -a entier-wms-demo-backend",
     "heroku:release": "heroku container:release web -a entier-wms-demo-backend",
-    "heroku:log": "heroku logs --tail -a entier-wms-demo-backend"
+    "heroku:log": "heroku logs --tail -a entier-wms-demo-backend",
+    "heroku:restart": "heroku restart -a entier-wms-demo-backend",
+    "heroku:config": "heroku config -a entier-wms-demo-backend"
   },
   "engines": {
     "node": "20.17.0"
