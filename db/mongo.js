@@ -3,6 +3,11 @@ const config = require("../config");
 
 module.exports = {
   connect: async () => {
+    mongoose.connection.on("connecting", () =>
+      console.log(
+        `connecting to mongo at uri: "${config.MONGO.URI}" to db: ${config.MONGO.DATABASE}"`,
+      ),
+    );
     mongoose.connection.on("connected", () =>
       console.log(`connected to mongo database`),
     );
@@ -21,8 +26,6 @@ module.exports = {
     );
 
     await mongoose.connect(config.MONGO.URI, {
-      user: config.MONGO.USER,
-      pass: config.MONGO.PASSWORD,
       dbName: config.MONGO.DATABASE,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
