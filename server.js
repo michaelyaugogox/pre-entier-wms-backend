@@ -15,15 +15,16 @@ const stocktransactionrouter = require("./routers/stocktransactionrouter");
 const apikeyrouter = require("./routers/apiKeyRouter");
 const webhookrouter = require("./routers/webhookRouter");
 const publicapirouter = require("./routers/publicApiRouter");
+const mongo = require("./db/mongo");
 
 async function startServer() {
   try {
-    const { PORT, CORS_ORIGIN } = require("./config");
+    await mongo.connect();
     const app = express();
 
     app.use(
       cors({
-        origin: CORS_ORIGIN,
+        origin: config.CORS_ORIGIN,
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true,
       }),
@@ -68,24 +69,8 @@ async function startServer() {
       });
     });
 
-    // MongoDB connection
-    await mongoose.connect(config.MONGODB_URL, {
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-    });
-
-    console.log("connected to database successfully");
-
-    mongoose.connection.on("error", (err) => {
-      console.error("MongoDB connection error:", err);
-    });
-
-    mongoose.connection.on("disconnected", () => {
-      console.warn("MongoDB disconnected");
-    });
-
-    const server = app.listen(PORT, () => {
-      console.log(`The server is running at port ${PORT}`);
+    const server = app.listen(config.PORT, () => {
+      console.log(`The server is running at port ${config.PORT}`);
     });
 
     // Graceful shutdown
