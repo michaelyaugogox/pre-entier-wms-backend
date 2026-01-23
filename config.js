@@ -12,7 +12,7 @@ module.exports = {
   CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:4000",
 
   MONGO: {
-    URI: process.env.ORMONGO_RS_URL,
+    URI: process.env.MONGO_URI,
     DATABASE: process.env.MONGO_DATABASE,
     USER: process.env.MONGO_USER,
     PASSWORD: process.env.MONGO_PASSWORD,
