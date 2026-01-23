@@ -6,7 +6,7 @@ module.exports = {
   JWT_SECRET: process.env.JWT_SECRET,
   CORS_ORIGIN: [
     "http://localhost:4000",
-    "https://entier-wms-demo-web-e2b2a5bd00d9.herokuapp.com/",
+    "https://entier-wms-demo-web-e2b2a5bd00d9.herokuapp.com",
   ],
   MONGO: {
     URI: process.env.MONGO_URI,
