@@ -1,16 +1,13 @@
 require("dotenv").config();
 
 module.exports = {
-  // Server Configuration
   PORT: process.env.PORT || 3000,
   NODE_ENV: process.env.NODE_ENV || "production",
-
-  // JWT Configuration
   JWT_SECRET: process.env.JWT_SECRET,
-
-  // CORS Configuration
-  CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:4000",
-
+  CORS_ORIGIN: [
+    "http://localhost:4000",
+    "https://entier-wms-demo-backend-9065da238fb4.herokuapp.com",
+  ],
   MONGO: {
     URI: process.env.MONGO_URI,
     DATABASE: process.env.MONGO_DATABASE,
